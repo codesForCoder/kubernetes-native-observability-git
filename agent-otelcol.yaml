@@ -1,0 +1,380 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  annotations:
+    meta.helm.sh/release-name: o2c
+    meta.helm.sh/release-namespace: openobserve-collector
+  creationTimestamp: "2026-10-02T09:22:49Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: o2c
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: openobserve-collector
+    app.kubernetes.io/version: 0.158.0
+    helm.sh/chart: openobserve-collector-0.5.0
+  name: o2c-openobserve-collector-agent
+  namespace: openobserve-collector
+  resourceVersion: "65816"
+  uid: e346404a-94c6-488e-859b-9b5c968c70e1
+spec:
+  config:
+    connectors: {}
+    exporters:
+      otlphttp/openobserve:
+        endpoint: http://openobserve-openobserve-standalone.openobserve.svc.cluster.local:5080/api/default
+        headers:
+          Authorization: Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=
+      otlphttp/openobserve_k8s_events:
+        endpoint: http://openobserve-openobserve-standalone.openobserve.svc.cluster.local:5080/api/default
+        headers:
+          Authorization: Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=
+          stream-name: k8s_events
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+        path: /
+      zpages: {}
+    processors:
+      attributes:
+        actions:
+        - action: insert
+          key: k8s_cluster
+          value: minikube-3-node
+      batch:
+        send_batch_max_size: 5000
+        send_batch_size: 2000
+        timeout: 5s
+      k8sattributes:
+        auth_type: serviceAccount
+        extract:
+          labels:
+          - from: pod
+            key: app.kubernetes.io/name
+            tag_name: service.name
+          - from: pod
+            key: k8s-app
+            tag_name: k8s.app.name
+          - from: pod
+            key: app.kubernetes.io/instance
+            tag_name: k8s.app.instance
+          - from: pod
+            key: app.kubernetes.io/version
+            tag_name: service.version
+          - from: pod
+            key: app.kubernetes.io/component
+            tag_name: k8s.app.component
+          metadata:
+          - k8s.pod.name
+          - k8s.pod.uid
+          - k8s.deployment.name
+          - k8s.namespace.name
+          - k8s.node.name
+          - k8s.pod.start_time
+          - k8s.pod.ip
+          - k8s.container.name
+        filter:
+          node_from_env_var: K8S_NODE_NAME
+        passthrough: false
+        pod_association:
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.name
+          - from: resource_attribute
+            name: k8s.namespace.name
+          - from: resource_attribute
+            name: k8s.node.name
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.name
+          - from: resource_attribute
+            name: k8s.namespace.name
+        - sources:
+          - from: connection
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+        spike_limit_mib: 128
+      resourcedetection:
+        detectors:
+        - system
+        - env
+        - k8snode
+        override: true
+        system:
+          hostname_sources:
+          - os
+          - dns
+    receivers:
+      filelog/std:
+        exclude:
+        - /var/log/pods/*/otel-collector/*.log
+        - /var/log/pods/*/otc-container/*.log
+        - /var/log/pods/*/openobserve-ingester/*.log
+        include:
+        - /var/log/pods/*/*/*.log
+        include_file_name: false
+        include_file_path: true
+        operators:
+        - id: get-format
+          routes:
+          - expr: body matches "^\\{"
+            output: parser-docker
+          - expr: body matches "^[^ Z]+ "
+            output: parser-crio
+          - expr: body matches "^[^ Z]+Z"
+            output: parser-containerd
+          type: router
+        - id: parser-crio
+          output: extract_metadata_from_filepath
+          regex: ^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+          timestamp:
+            layout: 2006-01-02T15:04:05.999999999Z07:00
+            layout_type: gotime
+            parse_from: attributes.time
+          type: regex_parser
+        - id: parser-containerd
+          output: extract_metadata_from_filepath
+          regex: ^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+          timestamp:
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+            parse_from: attributes.time
+          type: regex_parser
+        - id: parser-docker
+          output: extract_metadata_from_filepath
+          timestamp:
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+            parse_from: attributes.time
+          type: json_parser
+        - cache:
+            size: 128
+          id: extract_metadata_from_filepath
+          parse_from: attributes["log.file.path"]
+          regex: ^.*\/[^_]+_[^_]+_(?P<uid>[a-f0-9\-]{36})\/
+          type: regex_parser
+        - from: attributes.log
+          to: body
+          type: move
+        - from: attributes.stream
+          to: attributes["log.iostream"]
+          type: move
+        - from: attributes.uid
+          on_error: send
+          to: resource["k8s.pod.uid"]
+          type: move
+        start_at: beginning
+      hostmetrics:
+        collection_interval: 30s
+        root_path: /hostfs
+        scrapers:
+          cpu:
+            metrics:
+              system.cpu.time:
+                attributes:
+                - cpu
+                - state
+              system.cpu.utilization:
+                attributes:
+                - cpu
+                - state
+                enabled: true
+          disk: {}
+          filesystem:
+            exclude_fs_types:
+              fs_types:
+              - autofs
+              - binfmt_misc
+              - bpf
+              - cgroup2
+              - configfs
+              - debugfs
+              - devpts
+              - devtmpfs
+              - fusectl
+              - hugetlbfs
+              - iso9660
+              - mqueue
+              - nsfs
+              - overlay
+              - proc
+              - procfs
+              - pstore
+              - rpc_pipefs
+              - securityfs
+              - selinuxfs
+              - squashfs
+              - sysfs
+              - tracefs
+              match_type: strict
+            exclude_mount_points:
+              match_type: regexp
+              mount_points:
+              - /dev/.*
+              - /proc/.*
+              - /sys/.*
+              - /run/k3s/containerd/.*
+              - /var/lib/docker/.*
+              - /var/lib/kubelet/.*
+              - /snap/.*
+          load: {}
+          memory:
+            metrics:
+              system.memory.utilization:
+                enabled: true
+          network: {}
+          processes: {}
+      kubeletstats:
+        auth_type: serviceAccount
+        collection_interval: 30s
+        endpoint: https://${env:K8S_NODE_IP}:10250
+        extra_metadata_labels:
+        - container.id
+        - k8s.volume.type
+        insecure_skip_verify: true
+        metric_groups:
+        - node
+        - pod
+        - container
+        - volume
+        metrics:
+          container.cpu.usage:
+            enabled: true
+          k8s.node.cpu.time:
+            enabled: true
+          k8s.node.cpu.usage:
+            enabled: true
+          k8s.pod.cpu.usage:
+            enabled: true
+          k8s.pod.cpu_limit_utilization:
+            enabled: true
+          k8s.pod.cpu_request_utilization:
+            enabled: true
+          k8s.pod.memory_limit_utilization:
+            enabled: true
+          k8s.pod.memory_request_utilization:
+            enabled: true
+    service:
+      extensions:
+      - health_check
+      - zpages
+      pipelines:
+        logs:
+          exporters:
+          - otlphttp/openobserve
+          processors:
+          - memory_limiter
+          - resourcedetection
+          - attributes
+          - k8sattributes
+          - batch
+          receivers:
+          - filelog/std
+        metrics:
+          exporters:
+          - otlphttp/openobserve
+          processors:
+          - memory_limiter
+          - resourcedetection
+          - attributes
+          - k8sattributes
+          - batch
+          receivers:
+          - kubeletstats
+          - hostmetrics
+      telemetry:
+        metrics:
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: 0.0.0.0
+                  port: 8888
+  configVersions: 3
+  daemonSetUpdateStrategy: {}
+  deploymentUpdateStrategy: {}
+  enableServiceLinks: true
+  env:
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  - name: K8S_NODE_IP
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
+  httpRoute:
+    enabled: false
+    gateway: ""
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.158.0
+  ingress:
+    route: {}
+  ipFamilyPolicy: SingleStack
+  managementState: managed
+  mode: daemonset
+  networkPolicy: {}
+  observability:
+    metrics: {}
+  podDnsConfig: {}
+  replicas: 1
+  resources: {}
+  serviceAccount: o2c-openobserve-collector
+  targetAllocator:
+    allocationStrategy: consistent-hashing
+    collectorNotReadyGracePeriod: 30s
+    collectorTargetReloadInterval: 30s
+    filterStrategy: relabel-config
+    observability:
+      metrics: {}
+    prometheusCR:
+      evaluationInterval: 30s
+      podMonitorNamespaceSelector: {}
+      probeNamespaceSelector: {}
+      scrapeConfigNamespaceSelector: {}
+      scrapeInterval: 30s
+      serviceMonitorNamespaceSelector: {}
+    resources: {}
+    telemetry:
+      metrics: {}
+  tolerations:
+  - operator: Exists
+  upgradeStrategy: automatic
+  volumeMounts:
+  - mountPath: /hostfs
+    name: hostfs
+  - mountPath: /var/log
+    name: varlog
+  - mountPath: /var/lib/docker/containers
+    name: varlibdockercontainers
+    readOnly: true
+  volumes:
+  - hostPath:
+      path: /
+    name: hostfs
+  - hostPath:
+      path: /var/log
+      type: ""
+    name: varlog
+  - hostPath:
+      path: /var/lib/docker/containers
+      type: ""
+    name: varlibdockercontainers
+status:
+  conditions:
+  - lastTransitionTime: "2026-10-02T09:22:49Z"
+    message: Successfully reconciled
+    observedGeneration: 1
+    reason: Reconciled
+    status: "True"
+    type: Ready
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.158.0
+  observedGeneration: 1
+  scale:
+    replicas: 3
+    selector: app.kubernetes.io/component=opentelemetry-collector,app.kubernetes.io/instance=openobserve-collector.o2c-openobserve-collector-agent,app.kubernetes.io/managed-by=opentelemetry-operator,app.kubernetes.io/name=openobserve-collector,app.kubernetes.io/part-of=opentelemetry,app.kubernetes.io/version=0.158.0,helm.sh/chart=openobserve-collector-0.5.0
+    statusReplicas: 3/3
+  version: 0.160.0
