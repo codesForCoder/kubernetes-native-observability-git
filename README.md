@@ -116,5 +116,11 @@ Redis       redis:6379
 PostgreSQL  postgres:5432
 OpenSearch  opensearch:9200
 Kafka       kafka:9092
+```
 
+```
+Application Instrumentation ....
+kubectl create namespace spring-app
+kubectl apply -f application-services/spring-boot-crud-deployment.yaml
+kubectl port-forward -n spring-app svc/spring-boot-crud 8081:8081
 ```

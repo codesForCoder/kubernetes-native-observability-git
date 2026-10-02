@@ -1,0 +1,30 @@
+###
+POST http://localhost:8081/api/books
+Content-Type: application/json
+
+{
+  "title": "This Is Fine",
+  "author": "Aniket Roy",
+  "price": 100.23,
+  "publishedYear": 2020,
+  "genre": "Friction",
+  "availability": true
+}
+###
+POST http://localhost:8081/api/books
+Content-Type: application/json
+
+{
+  "title": "This Is Fine 2",
+  "author": "Aniket Roy",
+  "price": 110.23,
+  "publishedYear": 2020,
+  "genre": "Friction",
+  "availability": true
+}
+
+
+
+###
+GET http://localhost:8081/api/books
+Content-Type: application/json
