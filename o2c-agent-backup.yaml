@@ -5,7 +5,7 @@ metadata:
     meta.helm.sh/release-name: o2c
     meta.helm.sh/release-namespace: openobserve-collector
   creationTimestamp: "2026-10-02T09:22:49Z"
-  generation: 1
+  generation: 3
   labels:
     app.kubernetes.io/instance: o2c
     app.kubernetes.io/managed-by: Helm
@@ -14,7 +14,7 @@ metadata:
     helm.sh/chart: openobserve-collector-0.5.0
   name: o2c-openobserve-collector-agent
   namespace: openobserve-collector
-  resourceVersion: "65816"
+  resourceVersion: "281595"
   uid: e346404a-94c6-488e-859b-9b5c968c70e1
 spec:
   config:
@@ -160,6 +160,11 @@ spec:
         - from: attributes.log
           to: body
           type: move
+        - id: parse-app-json
+          if: body matches "^\\s*\\{"
+          parse_from: body
+          parse_to: attributes
+          type: json_parser
         - from: attributes.stream
           to: attributes["log.iostream"]
           type: move
@@ -167,6 +172,13 @@ spec:
           on_error: send
           to: resource["k8s.pod.uid"]
           type: move
+        - id: parse-trace-context
+          if: attributes.trace_id != nil and attributes.span_id != nil
+          span_id:
+            parse_from: attributes.span_id
+          trace_id:
+            parse_from: attributes.trace_id
+          type: trace_parser
         start_at: beginning
       hostmetrics:
         collection_interval: 30s
@@ -367,12 +379,12 @@ status:
   conditions:
   - lastTransitionTime: "2026-10-02T09:22:49Z"
     message: Successfully reconciled
-    observedGeneration: 1
+    observedGeneration: 3
     reason: Reconciled
     status: "True"
     type: Ready
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.158.0
-  observedGeneration: 1
+  observedGeneration: 3
   scale:
     replicas: 3
     selector: app.kubernetes.io/component=opentelemetry-collector,app.kubernetes.io/instance=openobserve-collector.o2c-openobserve-collector-agent,app.kubernetes.io/managed-by=opentelemetry-operator,app.kubernetes.io/name=openobserve-collector,app.kubernetes.io/part-of=opentelemetry,app.kubernetes.io/version=0.158.0,helm.sh/chart=openobserve-collector-0.5.0

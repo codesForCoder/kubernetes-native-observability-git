@@ -1,0 +1,33 @@
+###
+POST http://localhost:8084/products
+Content-Type: application/json
+
+{ "name": "Sample Product", "price": 100 }
+
+
+###
+POST http://localhost:8084/products
+Content-Type: application/json
+
+{ "name": "Sample Product 2", "price": 200 }
+
+###
+@id=1111
+GET http://localhost:8084/products/{{id}}
+
+
+###
+GET http://localhost:8084/products
+
+
+
+
+###
+@id_update=2
+PUT http://localhost:8084/products/{{id_update}}
+Content-Type: application/json
+
+{"name": "Sample Product 2222", "price": 234 }
+
+###
+GET http://localhost:8084/products/{{id_update}}

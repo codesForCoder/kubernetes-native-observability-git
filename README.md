@@ -58,6 +58,48 @@ helm install o2c openobserve/openobserve-collector \
   --set "exporters.otlphttp/openobserve_k8s_events.endpoint=http://openobserve-openobserve-standalone.openobserve.svc.cluster.local:5080/api/default" \
   --set "exporters.otlphttp/openobserve_k8s_events.headers.Authorization=Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM="
 
+# Now add additional path to parse traceid and spanid if structured json logging is present
+#take backup
+kubectl get opentelemetrycollector o2c-openobserve-collector-agent -n openobserve-collector -o yaml > o2c-agent-backup.yaml
+kubectl get opentelemetrycollector o2c-openobserve-collector-gateway -n openobserve-collector -o yaml > o2c-gateway-backup.yaml
+
+kubectl patch opentelemetrycollector o2c-openobserve-collector-agent -n openobserve-collector --type=json -p='[
+  {
+    "op": "add",
+    "path": "/spec/config/receivers/filelog~1std/operators/6",
+    "value": {
+      "id": "parse-app-json",
+      "type": "json_parser",
+      "parse_from": "body",
+      "parse_to": "attributes",
+      "if": "body matches \"^\\\\s*\\\\{\""
+    }
+  }
+]'
+
+kubectl patch opentelemetrycollector o2c-openobserve-collector-agent -n openobserve-collector --type=json -p='[
+  {
+    "op": "add",
+    "path": "/spec/config/receivers/filelog~1std/operators/-",
+    "value": {
+      "id": "parse-trace-context",
+      "type": "trace_parser",
+      "trace_id": {
+        "parse_from": "attributes.trace_id"
+      },
+      "span_id": {
+        "parse_from": "attributes.span_id"
+      },
+      "if": "attributes.trace_id != nil and attributes.span_id != nil"
+    }
+  }
+]'
+
+#In case something wrong you can reapply - 
+kubectl apply -f o2c-agent-backup.yaml
+kubectl apply -f o2c-gateway-backup.yaml
+
+
 #Uninstall -
 helm uninstall o2c --namespace openobserve-collector
 
@@ -118,9 +160,10 @@ OpenSearch  opensearch:9200
 Kafka       kafka:9092
 ```
 
-```
+```Shell
 Application Instrumentation ....
-kubectl create namespace spring-app
 kubectl apply -f application-services/spring-boot-crud-deployment.yaml
 kubectl port-forward -n spring-app svc/spring-boot-crud 8081:8081
+kubectl apply -f application-services/golang-crud-deployment.yaml
+kubectl -n go-app port-forward svc/go-rest-api 8084:8084
 ```
