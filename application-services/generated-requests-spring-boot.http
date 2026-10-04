@@ -33,6 +33,6 @@ Content-Type: application/json
 @id_invalid = -100
 GET http://localhost:8081/api/books/{{id_invalid}}
 
-###
+### 
 @id = 1
 GET http://localhost:8081/api/books/{{id}}

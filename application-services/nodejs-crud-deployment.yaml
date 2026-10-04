@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: node-express-api
-          image: aniket1992/node-express-api:1.0
+          image: aniket1992/node-express-api:1.1
           imagePullPolicy: IfNotPresent
 
           ports:
@@ -62,6 +62,8 @@ spec:
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
               value: "http://o2c-openobserve-collector-gateway-collector.openobserve-collector.svc.cluster.local:4318/v1/traces"
 
+            - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+              value: "http://o2c-openobserve-collector-gateway-collector.openobserve-collector.svc.cluster.local:4318/v1/metrics"
           resources:
             requests:
               cpu: "100m"

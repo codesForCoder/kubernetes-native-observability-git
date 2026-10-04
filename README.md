@@ -168,4 +168,8 @@ kubectl apply -f application-services/golang-crud-deployment.yaml
 kubectl -n go-app port-forward svc/go-rest-api 8084:8084
 kubectl apply -f application-services/nodejs-crud-deployment.yaml
 kubectl -n node-app port-forward svc/node-express-api 9090:9090
+
+npm install k6
+k6 run spring-load-test.js
+
 ```
