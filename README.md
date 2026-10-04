@@ -195,3 +195,10 @@ docker build -t aniket1992/node-express-api:1.2 .
 docker push aniket1992/node-express-api:1.2
 
 ```
+
+```
+Reference Repos 
+https://github.com/codesForCoder/spring-boot-crud-operations-k8s-observe 
+https://github.com/codesForCoder/go-rest-api-with-postgresql-k8s-openobserve
+https://github.com/codesForCoder/node-express-sequelize-postgresql-k8s-openobserve
+```
