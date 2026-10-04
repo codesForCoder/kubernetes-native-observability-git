@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: node-express-api
-          image: aniket1992/node-express-api:1.1
+          image: aniket1992/node-express-api:1.3
           imagePullPolicy: IfNotPresent
 
           ports:
@@ -54,6 +54,9 @@ spec:
 
             - name: DB_NAME
               value: "appdb"
+
+            - name: KAFKA_BROKERS
+              value: "kafka.app-data.svc.cluster.local:9092"
 
             # OpenTelemetry
             - name: OTEL_SERVICE_NAME

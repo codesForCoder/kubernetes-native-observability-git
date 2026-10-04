@@ -95,7 +95,7 @@ kubectl patch opentelemetrycollector o2c-openobserve-collector-agent -n openobse
   }
 ]'
 
-#In case something wrong you can reapply - 
+#In case something wrong you can reapply -
 kubectl apply -f o2c-agent-backup.yaml
 kubectl apply -f o2c-gateway-backup.yaml
 
@@ -158,6 +158,19 @@ Redis       redis:6379
 PostgreSQL  postgres:5432
 OpenSearch  opensearch:9200
 Kafka       kafka:9092
+
+# topic verification
+kubectl get job kafka-create-topics -n app-data
+kubectl exec -n app-data deploy/kafka -- /opt/kafka/bin/kafka-topics.sh \
+  --list \
+  --bootstrap-server kafka:9092
+
+# In windows git bash
+MSYS_NO_PATHCONV=1 kubectl exec -n app-data deploy/kafka -- /opt/kafka/bin/kafka-topics.sh \
+  --list \
+  --bootstrap-server kafka:9092
+
+
 ```
 
 ```Shell
@@ -171,5 +184,14 @@ kubectl -n node-app port-forward svc/node-express-api 9090:9090
 
 npm install k6
 k6 run spring-load-test.js
+
+#Local commands
+mvn spring-boot:run -Dspring-boot.run.jvmArguments="-javaagent:./opentelemetry-javaagent.jar"
+mvn clean package -DskipTests
+docker build -t aniket1992/spring-boot-crud:1.9 .
+docker push aniket1992/spring-boot-crud:1.9
+
+docker build -t aniket1992/node-express-api:1.2 .
+docker push aniket1992/node-express-api:1.2
 
 ```
