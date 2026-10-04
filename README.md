@@ -166,4 +166,6 @@ kubectl apply -f application-services/spring-boot-crud-deployment.yaml
 kubectl port-forward -n spring-app svc/spring-boot-crud 8081:8081
 kubectl apply -f application-services/golang-crud-deployment.yaml
 kubectl -n go-app port-forward svc/go-rest-api 8084:8084
+kubectl apply -f application-services/nodejs-crud-deployment.yaml
+kubectl -n node-app port-forward svc/node-express-api 9090:9090
 ```

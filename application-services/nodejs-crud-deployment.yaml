@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: node-app
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-express-api
+  namespace: node-app
+  labels:
+    app: node-express-api
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: node-express-api
+
+  template:
+    metadata:
+      labels:
+        app: node-express-api
+
+    spec:
+      containers:
+        - name: node-express-api
+          image: aniket1992/node-express-api:1.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 9090
+
+          env:
+            # Application
+            - name: PORT
+              value: "9090"
+
+            # PostgreSQL
+            - name: DB_HOST
+              value: "postgres.app-data.svc.cluster.local"
+
+            - name: DB_PORT
+              value: "5432"
+
+            - name: DB_USER
+              value: "appuser"
+
+            - name: DB_PASSWORD
+              value: "apppassword"
+
+            - name: DB_NAME
+              value: "appdb"
+
+            # OpenTelemetry
+            - name: OTEL_SERVICE_NAME
+              value: "node-express-api"
+
+            - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+              value: "http://o2c-openobserve-collector-gateway-collector.openobserve-collector.svc.cluster.local:4318/v1/traces"
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-express-api
+  namespace: node-app
+
+spec:
+  selector:
+    app: node-express-api
+
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+
+  type: ClusterIP

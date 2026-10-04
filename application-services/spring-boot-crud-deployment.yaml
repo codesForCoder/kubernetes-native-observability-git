@@ -35,7 +35,7 @@ spec:
 
       containers:
         - name: spring-boot-crud
-          image: aniket1992/spring-boot-crud:1.6
+          image: aniket1992/spring-boot-crud:1.8
           imagePullPolicy: Always
 
           ports:
@@ -56,6 +56,9 @@ spec:
 
             - name: GO_PRODUCT_SERVICE_URL
               value: "http://go-rest-api.go-app.svc.cluster.local:8084"
+
+            - name: NODE_TUTORIAL_SERVICE_URL
+              value: "http://node-express-api.node-app.svc.cluster.local:9090"
 
             - name: OTEL_SERVICE_NAME
               value: spring-boot-crud
