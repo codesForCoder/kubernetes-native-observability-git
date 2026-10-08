@@ -201,4 +201,11 @@ Reference Repos
 https://github.com/codesForCoder/spring-boot-crud-operations-k8s-observe 
 https://github.com/codesForCoder/go-rest-api-with-postgresql-k8s-openobserve
 https://github.com/codesForCoder/node-express-sequelize-postgresql-k8s-openobserve
+https://github.com/codesForCoder/react-api-integration-k8s-openobserve
+```
+## Gateway aoi setup
+```
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+kubectl get gatewayclass
+
 ```
