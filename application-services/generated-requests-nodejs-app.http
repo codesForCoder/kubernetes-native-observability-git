@@ -29,5 +29,3 @@ Content-Type: application/json
 
 {"title": "Sample Tutorial 2 Updated","description": "This is a good tutorial updated" , "published": true  }
 
-###
-GET http://localhost:8084/products/{{id_update}}

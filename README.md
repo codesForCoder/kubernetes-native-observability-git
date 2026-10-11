@@ -41,6 +41,7 @@ helm repo add openobserve https://charts.openobserve.ai
 helm repo update
 kubectl create namespace openobserve
 
+  
 helm install openobserve openobserve/openobserve-standalone \
   --namespace openobserve \
   -f values.yaml
@@ -52,8 +53,9 @@ helm uninstall openobserve -n openobserve
 kubectl delete pvc data-openobserve-openobserve-standalone-0 -n openobserve
 kubectl get all -n openobserve 
 kubectl get pvc -n openobserve
-kubectl get pv
+kubectl get pv -n openobserve
 kubectl delete pv pvc-19dd9fc0-79b1-446e-a046-06457db7f5d2
+kubectl delete namespace openobserve
 
 #Prerequist for otel 
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
