@@ -1,0 +1,49 @@
+mode: deployment
+
+# Add this block to specify the collector distribution
+image:
+  repository: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
+
+# Resolves the GOMEMLIMIT warning
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+  processors:
+    memory_limiter:
+      check_interval: 1s
+      limit_mib: 800
+      spike_limit_mib: 200
+    batch:
+      send_batch_size: 1000
+      timeout: 5s
+
+  exporters:
+    # Resolves the deprecation warning
+    otlp_http/openobserve:
+      endpoint: http://openobserve-openobserve-standalone.openobserve.svc.cluster.local:5080/api/default
+      headers:
+        Authorization: Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=
+
+  service:
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, batch]
+        exporters: [otlp_http/openobserve]
+      metrics:
+        receivers: [otlp]
+        processors: [memory_limiter, batch]
+        exporters: [otlp_http/openobserve]

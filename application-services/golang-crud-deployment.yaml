@@ -46,8 +46,9 @@ spec:
             - name: OTEL_SERVICE_NAME
               value: "go-rest-api"
 
+            # UPDATED: Pointing to the new OTel Gateway Deployment (HTTP port 4318)
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: "o2c-openobserve-collector-gateway-collector.openobserve-collector.svc.cluster.local:4318"
+              value: "otel-gateway-opentelemetry-collector.openobserve-collector.svc.cluster.local:4318"
 
 ---
 apiVersion: v1

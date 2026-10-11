@@ -168,6 +168,29 @@ for i in {1..5}; do
 done
 ```
 
+# For otel vasnila impl 
+```
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
+kubectl create namespace openobserve-collector
+
+helm install otel-agent open-telemetry/opentelemetry-collector \
+  --namespace openobserve-collector \
+  -f agent-values.yaml
+
+helm upgrade otel-agent open-telemetry/opentelemetry-collector \
+  --namespace openobserve-collector \
+  -f agent-values.yaml
+
+helm install otel-gateway open-telemetry/opentelemetry-collector \
+  --namespace openobserve-collector \
+  -f gateway-values.yaml
+
+helm upgrade otel-gateway open-telemetry/opentelemetry-collector \
+  --namespace openobserve-collector \
+  -f gateway-values.yaml
+```
+
 ```Shell
 # Application backing service - Redis , Opensearch , Postgres
 

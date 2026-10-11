@@ -1,0 +1,40 @@
+mode: daemonset
+
+image:
+  repository: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+presets:
+  logsCollection:
+    enabled: true
+    includeCollectorLogs: false
+  kubernetesAttributes:
+    enabled: true
+
+config:
+  processors:
+    memory_limiter:
+      check_interval: 1s
+      limit_mib: 512
+      spike_limit_mib: 128
+    batch:
+      send_batch_size: 1000
+      timeout: 5s
+
+  exporters:
+    otlp_http/openobserve:
+      endpoint: http://openobserve-openobserve-standalone.openobserve.svc.cluster.local:5080/api/default
+      headers:
+        Authorization: Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=
+
+  service:
+    pipelines:
+      logs:
+        processors: [memory_limiter, k8s_attributes, batch]
+        exporters: [otlp_http/openobserve]

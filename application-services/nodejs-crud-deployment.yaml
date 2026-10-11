@@ -62,11 +62,11 @@ spec:
             - name: OTEL_SERVICE_NAME
               value: "node-express-api"
 
+            # UPDATED: Pointing to the new OTel Gateway Deployment (HTTP port 4318)
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-              value: "http://o2c-openobserve-collector-gateway-collector.openobserve-collector.svc.cluster.local:4318/v1/traces"
-
+              value: "http://otel-gateway-opentelemetry-collector.openobserve-collector.svc.cluster.local:4318/v1/traces"
             - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
-              value: "http://o2c-openobserve-collector-gateway-collector.openobserve-collector.svc.cluster.local:4318/v1/metrics"
+              value: "http://otel-gateway-opentelemetry-collector.openobserve-collector.svc.cluster.local:4318/v1/metrics"
           resources:
             requests:
               cpu: "100m"
