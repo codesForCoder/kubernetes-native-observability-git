@@ -46,10 +46,23 @@ helm install openobserve openobserve/openobserve-standalone \
   -f values.yaml
 
 kubectl port-forward svc/openobserve-openobserve-standalone 5080:5080 -n openobserve
-#Prerequist
+
+#Uninstasll
+helm uninstall openobserve -n openobserve
+kubectl delete pvc data-openobserve-openobserve-standalone-0 -n openobserve
+kubectl get all -n openobserve 
+kubectl get pvc -n openobserve
+kubectl get pv
+kubectl delete pv pvc-19dd9fc0-79b1-446e-a046-06457db7f5d2
+
+#Prerequist for otel 
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 #Collector Installation
+
+kubectl create namespace openobserve-collector
 helm install o2c openobserve/openobserve-collector \
   --namespace openobserve-collector \
   --set k8sCluster=minikube-3-node \
@@ -58,10 +71,26 @@ helm install o2c openobserve/openobserve-collector \
   --set "exporters.otlphttp/openobserve_k8s_events.endpoint=http://openobserve-openobserve-standalone.openobserve.svc.cluster.local:5080/api/default" \
   --set "exporters.otlphttp/openobserve_k8s_events.headers.Authorization=Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM="
 
-# Now add additional path to parse traceid and spanid if structured json logging is present
-#take backup
-kubectl get opentelemetrycollector o2c-openobserve-collector-agent -n openobserve-collector -o yaml > o2c-agent-backup.yaml
-kubectl get opentelemetrycollector o2c-openobserve-collector-gateway -n openobserve-collector -o yaml > o2c-gateway-backup.yaml
+
+#For minikube 
+kubectl patch otelcol o2c-openobserve-collector-agent \
+  -n openobserve-collector \
+  --type='json' \
+  -p='[
+    {
+      "op": "replace",
+      "path": "/spec/config/receivers/filelog~1std/operators/4/regex",
+      "value": "^.*/[^_]+_[^_]+_(?P<uid>[^/]+)/"
+    }
+  ]'
+
+
+ kubectl patch otelcol o2c-openobserve-collector-agent   -n openobserve-collector   --type='json'   -p='[
+    {
+      "op": "remove",
+      "path": "/spec/config/receivers/filelog~1std/operators/6"
+    }
+  ]'
 
 kubectl patch opentelemetrycollector o2c-openobserve-collector-agent -n openobserve-collector --type=json -p='[
   {
@@ -95,13 +124,11 @@ kubectl patch opentelemetrycollector o2c-openobserve-collector-agent -n openobse
   }
 ]'
 
-#In case something wrong you can reapply -
-kubectl apply -f o2c-agent-backup.yaml
-kubectl apply -f o2c-gateway-backup.yaml
-
 
 #Uninstall -
 helm uninstall o2c --namespace openobserve-collector
+kubectl delete namespace openobserve-collector
+
 
 # Example - Custom Log stream example
 
@@ -203,7 +230,7 @@ https://github.com/codesForCoder/go-rest-api-with-postgresql-k8s-openobserve
 https://github.com/codesForCoder/node-express-sequelize-postgresql-k8s-openobserve
 https://github.com/codesForCoder/react-api-integration-k8s-openobserve
 ```
-## Gateway aoi setup
+## Gateway aoi setup WIP 
 ```
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
 kubectl get gatewayclass
