@@ -191,6 +191,11 @@ helm install otel-gateway open-telemetry/opentelemetry-collector \
 helm upgrade otel-gateway open-telemetry/opentelemetry-collector \
   --namespace openobserve-collector \
   -f gateway-values.yaml
+  
+#uninstall
+helm uninstall otel-agent -n openobserve-collector
+helm uninstall otel-gateway -n openobserve-collector
+kubectl delete ns openobserve-collector
 ```
 
 ```Shell
