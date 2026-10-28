@@ -37,168 +37,6 @@ http://localhost:8080
 ```
 
 ```Shell
-helm repo add openobserve https://charts.openobserve.ai
-helm repo update
-kubectl create namespace openobserve
-
-  
-helm install openobserve openobserve/openobserve-standalone \
-  --namespace openobserve \
-  -f values.yaml
-
-kubectl port-forward svc/openobserve-openobserve-standalone 5080:5080 -n openobserve
-
-#Uninstasll
-helm uninstall openobserve -n openobserve
-kubectl delete pvc data-openobserve-openobserve-standalone-0 -n openobserve
-kubectl get all -n openobserve 
-kubectl get pvc -n openobserve
-kubectl get pv -n openobserve
-kubectl delete pv pvc-19dd9fc0-79b1-446e-a046-06457db7f5d2
-kubectl delete namespace openobserve
-
-#Prerequist for otel 
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
-kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
-#Collector Installation
-
-kubectl create namespace openobserve-collector
-helm install o2c openobserve/openobserve-collector \
-  --namespace openobserve-collector \
-  --set k8sCluster=minikube-3-node \
-  --set "exporters.otlphttp/openobserve.endpoint=http://openobserve-openobserve-standalone.openobserve.svc.cluster.local:5080/api/default" \
-  --set "exporters.otlphttp/openobserve.headers.Authorization=Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=" \
-  --set "exporters.otlphttp/openobserve_k8s_events.endpoint=http://openobserve-openobserve-standalone.openobserve.svc.cluster.local:5080/api/default" \
-  --set "exporters.otlphttp/openobserve_k8s_events.headers.Authorization=Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM="
-
-
-#For minikube 
-kubectl patch otelcol o2c-openobserve-collector-agent \
-  -n openobserve-collector \
-  --type='json' \
-  -p='[
-    {
-      "op": "replace",
-      "path": "/spec/config/receivers/filelog~1std/operators/4/regex",
-      "value": "^.*/[^_]+_[^_]+_(?P<uid>[^/]+)/"
-    }
-  ]'
-
-
- kubectl patch otelcol o2c-openobserve-collector-agent   -n openobserve-collector   --type='json'   -p='[
-    {
-      "op": "remove",
-      "path": "/spec/config/receivers/filelog~1std/operators/6"
-    }
-  ]'
-
-kubectl patch opentelemetrycollector o2c-openobserve-collector-agent -n openobserve-collector --type=json -p='[
-  {
-    "op": "add",
-    "path": "/spec/config/receivers/filelog~1std/operators/6",
-    "value": {
-      "id": "parse-app-json",
-      "type": "json_parser",
-      "parse_from": "body",
-      "parse_to": "attributes",
-      "if": "body matches \"^\\\\s*\\\\{\""
-    }
-  }
-]'
-
-kubectl patch opentelemetrycollector o2c-openobserve-collector-agent -n openobserve-collector --type=json -p='[
-  {
-    "op": "add",
-    "path": "/spec/config/receivers/filelog~1std/operators/-",
-    "value": {
-      "id": "parse-trace-context",
-      "type": "trace_parser",
-      "trace_id": {
-        "parse_from": "attributes.trace_id"
-      },
-      "span_id": {
-        "parse_from": "attributes.span_id"
-      },
-      "if": "attributes.trace_id != nil and attributes.span_id != nil"
-    }
-  }
-]'
-
-
-#Uninstall -
-helm uninstall o2c --namespace openobserve-collector
-kubectl delete namespace openobserve-collector
-
-
-# Example - Custom Log stream example
-
-for i in {1..5}; do
-  CURRENT_TIME=$(date +%s%N)
-  curl -s -X POST http://localhost:5080/api/default/v1/logs \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=" \
-    -H "stream-name: direct-test-app" \
-    -d "{
-      \"resourceLogs\": [
-        {
-          \"resource\": {
-            \"attributes\": [
-              {
-                \"key\": \"service.name\",
-                \"value\": { \"stringValue\": \"direct-test-app\" }
-              }
-            ]
-          },
-          \"scopeLogs\": [
-            {
-              \"logRecords\": [
-                {
-                  \"timeUnixNano\": \"$CURRENT_TIME\",
-                  \"severityText\": \"INFO\",
-                  \"body\": { \"stringValue\": \"Batch log test entry $i\" }
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }"
-  echo -e "\nSent entry $i"
-  sleep 1
-done
-```
-
-# For otel vasnila impl 
-```
-helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-helm repo update
-kubectl create namespace openobserve-collector
-
-helm install otel-agent open-telemetry/opentelemetry-collector \
-  --namespace openobserve-collector \
-  -f agent-values.yaml
-
-helm upgrade otel-agent open-telemetry/opentelemetry-collector \
-  --namespace openobserve-collector \
-  -f agent-values.yaml
-
-helm install otel-gateway open-telemetry/opentelemetry-collector \
-  --namespace openobserve-collector \
-  -f gateway-values.yaml
-
-helm upgrade otel-gateway open-telemetry/opentelemetry-collector \
-  --namespace openobserve-collector \
-  -f gateway-values.yaml
-  
-#uninstall
-helm uninstall otel-agent -n openobserve-collector
-helm uninstall otel-gateway -n openobserve-collector
-kubectl delete ns openobserve-collector
-```
-
-```Shell
 # Application backing service - Redis , Opensearch , Postgres
 
 kubectl create namespace app-data
@@ -264,5 +102,52 @@ https://github.com/codesForCoder/react-api-integration-k8s-openobserve
 ```
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
 kubectl get gatewayclass
+
+```
+### Otel Installation 
+```
+kubectl create namespace observability
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
+helm search repo open-telemetry/opentelemetry-collector
+helm install otel-gateway open-telemetry/opentelemetry-collector -n observability -f otel-config/gateway-values.yaml --wait --timeout 5m
+helm install otel-agent open-telemetry/opentelemetry-collector -n observability -f otel-config/agent-values.yaml --wait --timeout 5m
+```
+### Loki installation 
+```
+helm repo add grafana-community https://grafana-community.github.io/helm-charts
+helm repo update
+helm install loki grafana-community/loki -f observe-backend/loki-values.yaml -n observability
+
+```
+### Tempo Installation
+```
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm install tempo grafana/tempo -f observe-backend/tempo-values.yaml -n observability
+```
+
+### extra commands 
+```
+helm upgrade otel-gateway open-telemetry/opentelemetry-collector   -n observability   -f otel-config/gateway-values.yaml   --wait --timeout 5m
+helm upgrade otel-agent open-telemetry/opentelemetry-collector -n observability -f otel-config/agent-values.yaml --wait --timeout 5m
+
+curl -s "http://127.0.0.1:3100/loki/api/v1/query_range" \
+  --data-urlencode 'query={service_name="node-express-api"}' \
+  --data-urlencode 'limit=5'
+
+curl -s "http://127.0.0.1:3100/loki/api/v1/query_range" \
+  --data-urlencode 'query={service_name="go-rest-api"}' \
+  --data-urlencode 'limit=5'
+
+curl -s "http://127.0.0.1:3100/loki/api/v1/query_range" \
+  --data-urlencode 'query={service_name="spring-boot-crud"}' \
+  --data-urlencode 'limit=5'
+
+-- when debug 
+kubectl logs deployment/otel-gateway-opentelemetry-collector -n observability -f | grep 'Trace ID'
+kubectl logs -n observability -l app.kubernetes.io/name=opentelemetry-collector --tail=100 -f | grep "Body"
+
+
 
 ```

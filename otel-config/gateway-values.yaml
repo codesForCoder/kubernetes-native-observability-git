@@ -31,19 +31,21 @@ config:
       timeout: 5s
 
   exporters:
-    # Resolves the deprecation warning
-    otlp_http/openobserve:
-      endpoint: http://openobserve-openobserve-standalone.openobserve.svc.cluster.local:5080/api/default
-      headers:
-        Authorization: Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=
-
+    # Add the OTLP gRPC exporter pointing to Tempo
+    otlp/tempo:
+      endpoint: "tempo.observability.svc.cluster.local:4317"
+      tls:
+        insecure: true
+    debug:
+      verbosity: detailed
   service:
     pipelines:
       traces:
         receivers: [otlp]
         processors: [memory_limiter, batch]
-        exporters: [otlp_http/openobserve]
+        exporters: [otlp/tempo]
+#        exporters: [debug]
       metrics:
         receivers: [otlp]
         processors: [memory_limiter, batch]
-        exporters: [otlp_http/openobserve]
+        exporters: [debug]

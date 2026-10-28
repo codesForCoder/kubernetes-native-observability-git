@@ -1,0 +1,39 @@
+deploymentMode: SingleBinary
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 10Gi
+
+# Disable unnecessary features for local Minikube testing
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+
+# Configure Loki to use local filesystem storage (ideal for Minikube)
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  schema_config:
+    configs:
+      - from: 2024-01-01
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+  # Explicitly allow the test schema if needed, or ensure the above matches Helm's validation
+  useTestSchema: true
+# Enable the gateway so pods can push logs via HTTP
+gateway:
+  enabled: true
+  service:
+    type: ClusterIP

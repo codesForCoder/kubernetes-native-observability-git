@@ -1,0 +1,35 @@
+tempo:
+  multitenancyEnabled: false
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/wal
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"
+
+# Run in simple single-binary mode for local testing
+persistence:
+  enabled: true
+  size: 10Gi
+
+# Disable unnecessary microservice components for lightweight usage
+distributor:
+  replicas: 0
+ingester:
+  replicas: 0
+querier:
+  replicas: 0
+queryFrontend:
+  replicas: 0
+compactor:
+  replicas: 0
+metricsGenerator:
+  replicas: 0
+ruler:
+  replicas: 0
