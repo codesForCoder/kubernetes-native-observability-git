@@ -31,6 +31,11 @@ config:
       timeout: 5s
 
   exporters:
+    prometheus_remote_write:
+      http:
+        endpoint: "http://prometheus-server.observability.svc.cluster.local/api/v1/write"
+        tls:
+          insecure: true
     # Add the OTLP gRPC exporter pointing to Tempo
     otlp/tempo:
       endpoint: "tempo.observability.svc.cluster.local:4317"
@@ -48,4 +53,5 @@ config:
       metrics:
         receivers: [otlp]
         processors: [memory_limiter, batch]
-        exporters: [debug]
+        exporters: [prometheus_remote_write]
+#        exporters: [debug]

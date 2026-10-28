@@ -51,6 +51,8 @@ spec:
 
             - name: OTEL_EXPORTER_OTLP_PROTOCOL
               value: "http/protobuf"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
 
 ---
 apiVersion: v1

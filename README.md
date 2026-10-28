@@ -126,7 +126,27 @@ helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 helm install tempo grafana/tempo -f observe-backend/tempo-values.yaml -n observability
 ```
+### Prometheus Installation 
+```
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/prometheus -f observe-backend/prometheus-values.yaml -n observability
+kubectl port-forward --namespace observability svc/prometheus-server 9090:80
 
+```
+### Grafana Installation 
+```
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+helm install grafana grafana/grafana -n observability
+user - admin 
+pass - run below 
+kubectl get secret --namespace observability grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+access portal 
+kubectl port-forward --namespace observability svc/grafana 3000:80
+http://localhost:3000
+```
 ### extra commands 
 ```
 helm upgrade otel-gateway open-telemetry/opentelemetry-collector   -n observability   -f otel-config/gateway-values.yaml   --wait --timeout 5m
