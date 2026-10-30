@@ -129,9 +129,41 @@ helm install tempo grafana/tempo -f observe-backend/tempo-values.yaml -n observa
 ### Prometheus Installation 
 ```
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install prometheus prometheus-community/prometheus -f observe-backend/prometheus-values.yaml -n observability
-kubectl port-forward --namespace observability svc/prometheus-server 9090:80
+helm repo update prometheus-community
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  -f observe-backend/prometheus-values.yaml \
+  -n observability \
+  --wait \
+  --timeout 10m
+kubectl port-forward --namespace observability svc/prometheus-kube-prometheus-prometheus 9090:9090
+http://localhost:9090
+
+
+
+TROUBLESHOOTING INSTALLATION
+# in case we get crd conflict - you can take backup - check if not active resource - delete them 
+kubectl get pods -A | grep -Ei 'prometheus|operator'
+empty response
+kubectl get prometheuses,servicemonitors,podmonitors,prometheusrules -A
+Nothing - or prometheus not found 
+mkdir -p observe-backend/prometheus-backup
+kubectl get crd podmonitors.monitoring.coreos.com -o yaml > observe-backend/prometheus-backup/podmonitors.yaml
+kubectl get crd servicemonitors.monitoring.coreos.com -o yaml > observe-backend/prometheus-backup/servicemonitors.yaml
+kubectl get crd alertmanagers.monitoring.coreos.com -o yaml > observe-backend/prometheus-backup/alertmanagers.yaml
+kubectl get crd alertmanagerconfigs.monitoring.coreos.com -o yaml > observe-backend/prometheus-backup/alertmanagerconfigs.yaml
+for backup 
+kubectl get podmonitors -A
+kubectl get servicemonitors -A
+kubectl get alertmanagers -A
+kubectl get alertmanagerconfigs -A
+for checking exisyting resource 
+kubectl delete crd podmonitors.monitoring.coreos.com
+kubectl delete crd servicemonitors.monitoring.coreos.com
+kubectl delete crd alertmanagers.monitoring.coreos.com
+kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
+for deleting old crds 
+kubectl get crd | grep monitoring.coreos.com
+No output 
 
 ```
 ### Grafana Installation 

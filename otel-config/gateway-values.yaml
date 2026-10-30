@@ -33,7 +33,7 @@ config:
   exporters:
     prometheus_remote_write:
       http:
-        endpoint: "http://prometheus-server.observability.svc.cluster.local/api/v1/write"
+        endpoint: "http://prometheus-kube-prometheus-prometheus.observability.svc.cluster.local:9090/api/v1/write"
         tls:
           insecure: true
     # Add the OTLP gRPC exporter pointing to Tempo

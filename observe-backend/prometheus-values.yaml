@@ -1,18 +1,26 @@
-server:
-  extraArgs:
-    web.enable-lifecycle: "true" # Enables the /-/reload HTTP endpoint
-  service:
-    type: ClusterIP
-  persistentVolume:
-    enabled: true
-    size: 10Gi
+grafana:
+  enabled: false
 
-# Disable resource-heavy components not needed for basic OTLP metrics ingestion
+prometheus:
+  enabled: true
+  prometheusSpec:
+    retention: 3d
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+
 alertmanager:
-  enabled: false
-pushgateway:
-  enabled: false
+  enabled: true
+
+prometheusOperator:
+  enabled: true
+
 nodeExporter:
-  enabled: false
+  enabled: true
+
 kubeStateMetrics:
-  enabled: false
+  enabled: true
