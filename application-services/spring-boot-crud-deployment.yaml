@@ -77,6 +77,8 @@ spec:
 
             - name: OTEL_METRICS_EXPORTER
               value: otlp
+            - name: OTEL_METRIC_EXPORT_INTERVAL
+              value: "10000"
 
             - name: OTEL_LOGS_EXPORTER
               value: none

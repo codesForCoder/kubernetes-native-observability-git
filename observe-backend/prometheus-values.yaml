@@ -4,6 +4,7 @@ grafana:
 prometheus:
   enabled: true
   prometheusSpec:
+    enableRemoteWriteReceiver: true
     retention: 3d
     resources:
       requests:

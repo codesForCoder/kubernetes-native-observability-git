@@ -83,11 +83,16 @@ k6 run spring-load-test.js
 #Local commands
 mvn spring-boot:run -Dspring-boot.run.jvmArguments="-javaagent:./opentelemetry-javaagent.jar"
 mvn clean package -DskipTests
+
 docker build -t aniket1992/spring-boot-crud:1.9 .
 docker push aniket1992/spring-boot-crud:1.9
 
 docker build -t aniket1992/node-express-api:1.2 .
 docker push aniket1992/node-express-api:1.2
+
+docker build -t aniket1992/go-rest-api:1.0 .
+docker push aniket1992/go-rest-api:1.0
+
 
 ```
 
@@ -135,6 +140,10 @@ helm install prometheus prometheus-community/kube-prometheus-stack \
   -n observability \
   --wait \
   --timeout 10m
+helm upgrade prometheus prometheus-community/kube-prometheus-stack \
+  -n observability \
+  -f observe-backend/prometheus-values.yaml \
+  --wait --timeout 5m
 kubectl port-forward --namespace observability svc/prometheus-kube-prometheus-prometheus 9090:9090
 http://localhost:9090
 
@@ -200,6 +209,16 @@ curl -s "http://127.0.0.1:3100/loki/api/v1/query_range" \
 kubectl logs deployment/otel-gateway-opentelemetry-collector -n observability -f | grep 'Trace ID'
 kubectl logs -n observability -l app.kubernetes.io/name=opentelemetry-collector --tail=100 -f | grep "Body"
 
+-- for prometheus 
+count by (job, __name__) (
+  {job=~"spring-boot-crud|node-express-api|go-rest-api"}
+)
+
+count by (__name__) (
+  {
+    __name__=~"kube_.*|node_.*|container_.*|kubelet_.*|apiserver_.*"
+  }
+)
 
 
 ```
