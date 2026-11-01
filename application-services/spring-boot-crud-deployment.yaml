@@ -35,7 +35,7 @@ spec:
 
       containers:
         - name: spring-boot-crud
-          image: aniket1992/spring-boot-crud:1.10
+          image: aniket1992/spring-boot-crud:1.12
           imagePullPolicy: Always
 
           ports:

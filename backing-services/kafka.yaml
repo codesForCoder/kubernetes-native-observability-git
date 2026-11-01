@@ -39,7 +39,7 @@ spec:
             # - name: KAFKA_ADVERTISED_LISTENERS
             #   value: "PLAINTEXT://kafka:9092"
             - name: KAFKA_ADVERTISED_LISTENERS
-              value: "INTERNAL://kafka.app-data.svc.cluster.local:9092,EXTERNAL://localhost:29092"
+              value: "INTERNAL://kafka.app-data.svc.cluster.local:9092,EXTERNAL://host.docker.internal:29092"
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
               value: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
             - name: KAFKA_CONTROLLER_LISTENER_NAMES

@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: go-rest-api
-          image: aniket1992/go-rest-api:1.9
+          image: aniket1992/go-rest-api:1.10
           imagePullPolicy: IfNotPresent
 
           ports:

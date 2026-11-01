@@ -54,6 +54,31 @@ PostgreSQL  postgres:5432
 OpenSearch  opensearch:9200
 Kafka       kafka:9092
 
+
+kubectl port-forward -n app-data svc/postgres 15432:5432
+---Db viewer access 
+localhost - host 
+15432 - port 
+appdb -  database 
+username - appuser
+password - apppassword
+
+-- Kafka ui redpanda setup 
+
+helm repo add redpanda https://charts.redpanda.com/
+helm repo update
+
+helm upgrade --install redpanda-console redpanda/console \
+  --namespace app-data \
+  --create-namespace \
+  -f backing-services/console-values.yaml \
+  --wait \
+  --timeout 5m
+
+kubectl port-forward -n app-data svc/redpanda-console-console 8085:8080  
+http://localhost:8085/
+
+
 # topic verification
 kubectl get job kafka-create-topics -n app-data
 kubectl exec -n app-data deploy/kafka -- /opt/kafka/bin/kafka-topics.sh \
@@ -76,23 +101,32 @@ kubectl apply -f application-services/golang-crud-deployment.yaml
 kubectl -n go-app port-forward svc/go-rest-api 8084:8084
 kubectl apply -f application-services/nodejs-crud-deployment.yaml
 kubectl -n node-app port-forward svc/node-express-api 9090:9090
+kubectl apply -f application-services/frontend-deployment.yaml
+kubectl -n frontend port-forward svc/observability-frontend 5050:80
 
 npm install k6
 k6 run spring-load-test.js
 
 #Local commands
 mvn spring-boot:run -Dspring-boot.run.jvmArguments="-javaagent:./opentelemetry-javaagent.jar"
+
+
+docker login 
+
 mvn clean package -DskipTests
+docker build -t aniket1992/spring-boot-crud:1.11 .
+docker push aniket1992/spring-boot-crud:1.11
 
-docker build -t aniket1992/spring-boot-crud:1.9 .
-docker push aniket1992/spring-boot-crud:1.9
+npm install
+docker build -t aniket1992/node-express-api:1.5 .
+docker push aniket1992/node-express-api:1.5
 
-docker build -t aniket1992/node-express-api:1.2 .
-docker push aniket1992/node-express-api:1.2
+docker build -t aniket1992/go-rest-api:1.10 .
+docker push aniket1992/go-rest-api:1.10
 
-docker build -t aniket1992/go-rest-api:1.0 .
-docker push aniket1992/go-rest-api:1.0
 
+docker build -t aniket1992/observability-frontend:1.0 .
+docker push aniket1992/observability-frontend:1.0
 
 ```
 
@@ -144,8 +178,8 @@ helm upgrade prometheus prometheus-community/kube-prometheus-stack \
   -n observability \
   -f observe-backend/prometheus-values.yaml \
   --wait --timeout 5m
-kubectl port-forward --namespace observability svc/prometheus-kube-prometheus-prometheus 9090:9090
-http://localhost:9090
+kubectl port-forward --namespace observability svc/prometheus-kube-prometheus-prometheus 9191:9090
+http://localhost:9191
 
 
 
@@ -220,5 +254,8 @@ count by (__name__) (
   }
 )
 
-
+-- traceql query - where trace id is from producer side 
+{
+  link:traceID = "145e5a3e29c877f43ffd87533dcd55a5"
+}
 ```

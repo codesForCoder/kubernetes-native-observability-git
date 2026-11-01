@@ -1,0 +1,30 @@
+
+replicaCount: 1
+
+image:
+  registry: docker.redpanda.com
+  repository: redpandadata/console
+  pullPolicy: IfNotPresent
+
+config:
+  kafka:
+    brokers:
+      - kafka.app-data.svc.cluster.local:9092
+
+  server:
+    listenPort: 8080
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
