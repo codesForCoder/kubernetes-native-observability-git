@@ -7,6 +7,15 @@ Built around the **OpenTelemetry + LGTM stack**, this project brings together di
 The environment runs on Minikube and uses Helm and Kubernetes manifests to deploy the applications and observability infrastructure.
 
 ---
+## Diagrams
+
+![Cluster Observability Architecture Diagram](./Cluster_Observability_Architecture_Diagram.png)
+
+
+![Microservices Architecture Observability Flow](./Microservices_Architecture_Observability_Flow.png)
+
+
+![Asynchronous Distributed Tracing Diagram](./Asynchronous_Distributed_Tracing_Diagram.png)
 
 ## Table of Contents
 
